@@ -20,7 +20,6 @@ import testType from "./valuesets/test-type.json";
 import testResult from "./valuesets/test-result.json";
 import testManufacturer from "./valuesets/test-manf.json";
 import Alert from "@material-ui/lab/Alert";
-import AlertTitle from "@material-ui/lab/AlertTitle";
 
 const X509_COMMON_NAME_KEY = "2.5.4.3";
 
@@ -238,9 +237,12 @@ export const CertDisplay = ({ data, certificate }) => {
           </SyntaxHighlighter>
           {certificate && (
             <Alert>
-              <AlertTitle>Signature valid</AlertTitle>
               Digitally signed by{" "}
-              <Link download="certificate.der" href={certificateDownloadLink}>
+              <Link
+                download="certificate.der"
+                href={certificateDownloadLink}
+                target="_blank"
+              >
                 {getCommonName(certificate)}
               </Link>
             </Alert>
