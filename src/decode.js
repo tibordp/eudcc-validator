@@ -6,19 +6,17 @@ import { Certificate } from "pkijs";
 import * as asn1js from "asn1js";
 
 export const getTrustList = async () => {
-  const response = await fetch("https://eudcc.tibordp.workers.dev/trust-list");
+  const response = await fetch(process.env.REACT_APP_TRUST_LIST_URL);
   const trustList = await response.json();
   return trustList;
 };
 
 const getSigner = (kid, trustList) => {
-  const kidB64 = Buffer.from(kid).toString("base64");
-
-  if (!trustList[kidB64]) {
+  if (!trustList[kid]) {
     return null;
   }
 
-  const { x, y, x5c } = trustList[kidB64];
+  const { x, y, x5c } = trustList[kid];
   const certificateRaw = Buffer.from(x5c[0], "base64");
   const asn1 = asn1js.fromBER(certificateRaw.buffer);
   const certificate = new Certificate({ schema: asn1.result });
@@ -27,7 +25,7 @@ const getSigner = (kid, trustList) => {
     key: {
       x: Buffer.from(x, "base64"),
       y: Buffer.from(y, "base64"),
-      kid: Buffer.from(kid),
+      kid: Buffer.from(kid, "base64"),
     },
     certificate: certificate,
   };
@@ -38,10 +36,11 @@ export const errorDisplayMap = {
   NOT_TRUSTED: "The DCC is not signed by a trusted key.",
   SIGNATURE_INVALID: "The DCC on the certificate is invalid.",
   INVALID: "The DCC is malformed.",
+  UNSUPPORTED_FORMAT:
+    "The DCC is not in a supported format, so the validity cannot be verified.",
 };
 
 export const decodeEudcc = async (data, trustList) => {
-  // https://github.com/ehn-dcc-development/hcert-spec/blob/main/hcert_spec.md
   try {
     if (!data.startsWith("HC1:")) {
       return { error: "NOT_EUDCC" };
@@ -52,13 +51,23 @@ export const decodeEudcc = async (data, trustList) => {
 
     // Extract kid from the COSE header
     const decoded = cbor.decodeFirstSync(decompressed);
-    const signatureInfo = cbor.decodeFirstSync(decoded.value[0]);
-    const kid = signatureInfo.get(cose.common.HeaderParameters.kid);
-    const signer = getSigner(kid, trustList);
-
     const decodedCert = cbor.decodeFirstSync(decoded.value[2]);
     const hcert = decodedCert.get(-260).get(1);
 
+    let kid;
+    try {
+      // Try to extract KID from the certificate, if it is not present,
+      // we will not be able to validate the signature, but we can still
+      // display the data. We only target version 1.3.0+ of the spec.
+      const signatureInfo = cbor.decodeFirstSync(decoded.value[0]);
+      kid = Buffer.from(
+        signatureInfo.get(cose.common.HeaderParameters.kid)
+      ).toString("base64");
+    } catch (e) {
+      return { data: hcert, error: "UNSUPPORTED_FORMAT" };
+    }
+
+    const signer = getSigner(kid, trustList);
     if (!signer) {
       return { data: hcert, error: "NOT_TRUSTED" };
     }

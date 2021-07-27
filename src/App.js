@@ -169,10 +169,20 @@ function Validator() {
                   </Alert>
                 )}
                 {decoded.error && (
-                  <Alert variant="filled" severity="error">
-                    <AlertTitle>Invalid DCC</AlertTitle>
-                    {errorDisplayMap[decoded.error]}
-                  </Alert>
+                  <>
+                    {decoded.error === "UNSUPPORTED_FORMAT" && (
+                      <Alert variant="filled" severity="warning">
+                        <AlertTitle>DCC cannot be verified</AlertTitle>
+                        {errorDisplayMap[decoded.error]}
+                      </Alert>
+                    )}
+                    {decoded.error !== "UNSUPPORTED_FORMAT" && (
+                      <Alert variant="filled" severity="error">
+                        <AlertTitle>Invalid DCC</AlertTitle>
+                        {errorDisplayMap[decoded.error]}
+                      </Alert>
+                    )}
+                  </>
                 )}
               </Grid>
 

@@ -236,7 +236,7 @@ export const CertDisplay = ({ data, certificate }) => {
             {JSON.stringify(data, null, 2)}
           </SyntaxHighlighter>
           {certificate && (
-            <Alert>
+            <Alert severity="success">
               Digitally signed by{" "}
               <Link
                 download="certificate.der"
@@ -245,6 +245,12 @@ export const CertDisplay = ({ data, certificate }) => {
               >
                 {getCommonName(certificate)}
               </Link>
+            </Alert>
+          )}
+          {!certificate && (
+            <Alert severity="error">
+              Digital signature is invalid or the signing certificate is not
+              trusted.
             </Alert>
           )}
         </>

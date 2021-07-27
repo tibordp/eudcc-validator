@@ -6,6 +6,9 @@ addEventListener("fetch", (event) => {
   );
 });
 
+const PROD_ENDPOINT = "https://dgcg.covidbevis.se/tp/trust-list";
+const TEST_ENDPOINT = "https://dgcg-qa.covidbevis.se/tp/trust-list";
+
 async function handleRequest(event) {
   const { request } = event;
   const url = new URL(request.url);
@@ -18,8 +21,20 @@ async function handleRequest(event) {
     if (request.method === "OPTIONS") {
       response = handleOptions(request);
     } else if (request.method === "GET") {
-      if (url.pathname == "/trust-list") {
-        const trustList = await getTrustList();
+      if (url.pathname.startsWith("/trust-list")) {
+        let endpoint;
+        if (url.pathname === "/trust-list/prod") {
+          endpoint = PROD_ENDPOINT;
+        } else if (url.pathname === "/trust-list/test") {
+          endpoint = TEST_ENDPOINT;
+        } else {
+          response = new Response(null, {
+            status: 404,
+            statusText: "Not Found",
+          });
+        }
+
+        const trustList = await getTrustList(endpoint);
         response = new Response(JSON.stringify(trustList), {
           headers: {
             "Content-Type": "application/json",
@@ -44,8 +59,8 @@ async function handleRequest(event) {
   return response;
 }
 
-async function getTrustList(request) {
-  const response = await fetch("https://dgcg.covidbevis.se/tp/trust-list");
+async function getTrustList(endpoint) {
+  const response = await fetch(endpoint);
   const token = await response.text();
 
   const payload = JSON.parse(atob(token.split(".")[1]));
