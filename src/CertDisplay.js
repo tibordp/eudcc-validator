@@ -224,7 +224,7 @@ export const CertDisplay = ({ data, certificate }) => {
           <TextField title="Certificate issuer">{certInfoSection.is}</TextField>
           <TextField
             title="Unique certificate ID"
-            style={{ fontFamily: "monospace" }}
+            className={classes.monospace}
           >
             {certInfoSection.ci}
           </TextField>

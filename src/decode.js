@@ -59,9 +59,12 @@ export const decodeEudcc = async (data, trustList) => {
       // Try to extract KID from the certificate, if it is not present,
       // we will not be able to validate the signature, but we can still
       // display the data. We only target version 1.3.0+ of the spec.
-      const signatureInfo = cbor.decodeFirstSync(decoded.value[0]);
+      const signatureInfo_protected = cbor.decodeFirstSync(decoded.value[0]);
+      const signatureInfo_unprotected = decoded.value[1];
+
       kid = Buffer.from(
-        signatureInfo.get(cose.common.HeaderParameters.kid)
+        signatureInfo_protected.get(cose.common.HeaderParameters.kid) ||
+          signatureInfo_unprotected.get(cose.common.HeaderParameters.kid)
       ).toString("base64");
     } catch (e) {
       return { data: hcert, error: "UNSUPPORTED_FORMAT" };
